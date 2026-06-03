@@ -997,5 +997,52 @@ function flipCoin(choice){
 
 updateUI();
 </script>
+  // 1. Setup the audio asset pointing to your specific UUID filename
+const bgMusic = new Audio('5390-5d28-4c88-a9dc-a1bb42ba562e.mp3'); 
+bgMusic.loop = true;
+bgMusic.volume = 0.40; // Ambient background volume layer
+
+let isPlaying = false;
+let audioContext = null;
+
+// 2. The toggle engine linked directly to your button
+function toggleMusic() {
+    // Initialize the browser's audio framework on first tap
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+
+    const btn = document.getElementById('musicBtn');
+
+    if (!isPlaying) {
+        bgMusic.play()
+            .then(() => {
+                isPlaying = true;
+                btn.innerText = "⏸ Music";
+                btn.style.background = "rgba(0, 194, 255, 0.2)";
+                btn.style.borderColor = "var(--electric)";
+            })
+            .catch(err => {
+                console.log("Browser blocked autoplay. Needs user gesture interaction.", err);
+            });
+    } else {
+        bgMusic.pause();
+        isPlaying = false;
+        btn.innerText = "▶ Music";
+        btn.style.background = "rgba(26, 74, 138, 0.5)";
+        btn.style.borderColor = "rgba(0, 194, 255, 0.3)";
+    }
+}
+
+// 3. Global touch unlocker to handle strict mobile webview frameworks
+document.addEventListener('touchend', () => {
+    if (isPlaying && audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+}, { passive: true });
+  
 </body>
 </html>

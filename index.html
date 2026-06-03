@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>Vanilla Casino</title>
+    <style>
+        :root {
+            --bg-color: #0b111e;       
+            --card-bg: #151f32;       
+            --primary: #38bdf8;       
+            --amber: #f59e0b;         
+            --text: #f8fafc;          
+            --text-sub: #94a3b8;      
+            --win-green: #10b981;     
+            --loss-red: #ef4444;      
+            --inner-bg: #0f172a;      
+        }
+
+        * {
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            margin: 0;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        header { text-align: center; margin-bottom: 10px; width: 100%; }
+        h1 { color: var(--primary); margin: 5px 0; font-size: 2.1rem; font-weight: 800; }
+        .subtitle { color: var(--text-sub); margin-top: 0; font-size: 0.85rem; }
+
+        .hub-dashboard {
+            background: linear-gradient(135deg, #151f32, #0f172a);
+            padding: 12px;
+            border-radius: 14px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+        }
+        .chip-count { color: var(--primary); }
+
+        .global-stats {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 440px;
+            margin-bottom: 15px;
+        }
+        .stat-box {
+            flex: 1;
+            background: var(--card-bg);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        /* Fixed Navigation Layering */
+        .master-nav {
+            display: flex;
+            gap: 6px;
+            width: 100%;
+            max-width: 440px;
+            background: #090d16;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            z-index: 9999; /* Forces to the absolute front layer */
+        }
+        .master-btn {
+            flex: 1;
+            background: transparent;
+            color: var(--text-sub);
+            border: none;
+            padding: 12px 2px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            z-index: 10000;
+        }
+        .master-btn.active {
+            background: var(--card-bg);
+            color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 16px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.05);
+            display: none; 
+            position: relative;
+            z-index: 10;
+        }
+        .game-card.active { display: block; }
+
+        .slider-zone {
+            background: rgba(0,0,0,0.25);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+        .bet-slider {
+            width: 100%;
+            accent-color: var(--primary);
+        }
+
+        .live-screen {
+            background-color: var(--inner-bg);
+            border-radius: 12px;
+            padding: 15px;
+            min-height: 90px;
+            margin-bottom: 15px;
+            border: 1px solid #223147;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .screen-badge {
+            background-color: var(--loss-red);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            display: none;
+        }
+        .screen-text {
+            font-family: monospace;
+            font-size: 0.95rem;
+            color: #38bdf8;
+            font-weight: bold;
+            text-align: center;
+        }
+        .sub-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 12px;
+            background: #090d16;
+            padding: 4px;
+            border-radius: 8px;
+            position: relative;
+            z-index: 999;
+        }
+        .sub-tab-btn {
+            flex: 1;
+            background: transparent;
+            color: var(--text-sub);
+            padding: 8px 2px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 6px;
+            border: none;
+        }
+        .sub-tab-btn.active {
+            background: var(--card-bg);
+            color: var(--amber);
+        }
+        .market-title { font-size: 0.8rem; color: var(--text-sub); margin-bottom: 6px; }
+        .odds-grid { display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px; position: relative; z-index: 999; }
+        .odds-row {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+        .odds-row.selected {
+            border-color: var(--amber);
+            background: rgba(245, 158, 11, 0.08);
+        }
+        .odds-value {
+            background: #223147;
+            color: var(--amber);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        .odds-row.selected .odds-value { background: var(--amber); color: #0b111e; }
+        
+        .action-btn-main {
+            background: var(--primary); color: #0b111e; font-size: 1rem; font-weight: 800;
+            padding: 14px; border-radius: 12px; border: none; width: 100%; cursor: pointer;
+            position: relative; z-index: 9999;
+        }
+        .action-btn-main:disabled { background: #223147!important; color: #475569!important; cursor: not-allowed; }
+        .sports-btn { background: var(--amber); }
+
+        .table-felt {
+            background: var(--inner-bg);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 15px;
+        }
+        .hand-section { margin-bottom: 12px; }
+        .hand-label { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 4px; text-transform: uppercase; }
+        .card-row { font-size: 1.5rem; font-weight: bold; min-height: 40px; display: flex; gap: 6px; }
+        .playing-card { background: white; color: #0b111e; padding: 2px 8px; border-radius: 6px; }
+        .card-red { color: var(--loss-red); }
+        .bj-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; position: relative; z-index: 9999; }
+        .split-btn { padding: 12px; font-size: 0.9rem; font-weight: bold; border-radius: 10px; border: none; color: white; }
+        #hit-btn { background: var(--win-green); }
+        #stand-btn { background: var(--loss-red); }
+
+        .slots-reel-container {
+            background: var(--inner-bg);
+            border-radius: 14px;
+            padding: 20px 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .slot-window {
+            background: #1e293b; font-size: 2.8rem; width: 70px; height: 70px;
+            display: flex; align-items: center; justify-content: center; border-radius: 10px;
+        }
+        .spinning { animation: blurAnimation 0.1s infinite alternate; }
+        @keyframes blurAnimation { from { filter: blur(1px); } to { filter: blur(3px); } }
+
+        .message-board { text-align: center; font-weight: 600; min-height: 20px; margin-top: 12px; font-size: 0.9rem; color: var(--text-sub); }
+        .refill-btn {
+            background: transparent; color: var(--text-sub); border: 1px dashed var(--text-sub);
+            padding: 10px; border-radius: 10px; margin-top: 15px; width: 100%; max-width: 440px;
+            font-weight: bold; font-size: 0.85rem; position: relative; z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>💎 Vanilla Suite</h1>
+        <p class="subtitle">Sportsbook, Blackjack & Slots Dashboard</p>
+    </header>
+
+    <div class="hub-dashboard">
+        Wallet: <span class="chip-count" id="global-balance">1000</span> VC
+    </div>
+
+    <div class="global-stats">
+        <div class="stat-box" style="color: var(--win-green)">WINS: <span id="win-count">0</span></div>
+        <div class="stat-box" style="color: var(--loss-red)">LOSSES: <span id="loss-count">0</span></div>
+    </div>
+
+    <nav class="master-nav">
+        <button class="master-btn active" id="nav-sports" data-route="sports">育 Sportsbook</button>
+        <button class="master-btn" id="nav-bj" data-route="bj">🃏 Blackjack</button>
+        <button class="master-btn" id="nav-slots" data-route="slots">🎰 Slots</button>
+    </nav>
+
+    <div class="game-card active" id="card-sports">
+        <div class="live-screen">
+            <div class="screen-badge" id="live-badge">Live Sim</div>
+            <div class="screen-text" id="screen-text">Select a runner and lock your stake to go live.</div>
+        </div>
+        <div class="sub-tabs">
+            <button class="sub-tab-btn active" id="sub-horse" data-sport="horse">🏇 Racing</button>
+            <button class="sub-tab-btn" id="sub-football" data-sport="football">⚽ Football</button>
+            <button class="sub-tab-btn" id="sub-f1" data-sport="f1">🏎️ F1</button>
+        </div>
+        <div class="market-title" id="market-headline">Markets:</div>
+        <div class="odds-grid" id="odds-container"></div>
+        <div class="slider-zone">
+            <div class="slider-label"><span>Wager:</span><strong><span id="wager-sports-txt">50</span> VC</strong></div>
+            <input type="range" id="slider-sports" class="bet-slider" min="10" max="500" step="10" value="50">
+        </div>
+        <button class="action-btn-main sports-btn" id="book-btn" disabled>Lock Bet</button>
+    </div>
+
+    <div class="game-card" id="card-bj">
+        <div class="table-felt">
+            <div class="hand-section">
+                <div class="hand-label">Dealer Hand (<span id="dealer-score">0</span>)</div>
+                <div class="card-row" id="dealer-cards"></div>
+            </div>
+            <div class="hand-section" style="margin-bottom:0;">
+                <div class="hand-label">Your Hand (<span id="player-score">0</span>)</div>
+                <div class="card-row" id="player-cards"></div>
+            </div>
+        </div>
+        <div class="slider-zone" id="bj-slider-wrapper">
+            <div class="slider-label"><span>Wager:</span><strong><span id="wager-bj-txt">50</span> VC</strong></div>
+            <input type="range" id="slider-bj" class="bet-slider" min="10" max="500" step="10" value="50">
+        </div>
+        <div class="bj-grid">
+            <button class="action-btn-main" id="deal-btn">Deal Hand</button>
+            <button class="split-btn" id="hit-btn" style="display:none;">Hit</button>
+            <button class="split-btn" id="stand-btn" style="display:none;">Stand</button>
+        </div>
+        <div class="message-board" id="bj-msg">Deal to begin!</div>
+    </div>
+
+    <div class="game-card" id="card-slots">
+        <div class="slots-reel-container">
+            <div class="slot-window" id="reel1">🍇</div>
+            <div class="slot-window" id="reel2">🍉</div>
+            <div class="slot-window" id="reel3">🍒</div>
+        </div>
+        <div class="slider-zone">
+            <div class="slider-label"><span>Cost:</span><strong><span id="wager-slots-txt">50</span> VC</strong></div>
+            <input type="range" id="slider-slots" class="bet-slider" min="10" max="500" step="10" value="50">
+        </div>
+        <button class="action-btn-main" id="slots-btn">Pull Lever</button>
+        <div class="message-board" id="slots-msg">Match items to win.</div>
+    </div>
+
+    <button class="refill-btn" id="emergency-btn">Emergency Cash Drop (+500 VC)</button>
+
+    <script>
+        let balance = 1000, totalWins = 0, totalLosses = 0, universalWager = 50;
+        let activeModule = 'sports', currentSport = 'horse', selectedRunnerId = null, operationInFlight = false;
+
+        const sportsDatabase = {
+            horse: { headline: "Derby Stadium Race 4:", runners: [{id:1, name:"Vanilla Lightning", odds:2.1}, {id:2, name:"Biscuit Blitz", odds:3.5}, {id:3, name:"Cream Dream", odds:5.2}], stages: ["And they're off!", "Down the stretch!", "Heading to the line!", "Syncing track array finish..."] },
+            football: { headline: "Exhibition Match Setup:", runners: [{id:1, name:"Vanilla United", odds:1.9}, {id:2, name:"Draw Arena", odds:3.2}, {id:3, name:"FC Chocolate City", odds:4.0}], stages: ["Kickoff!", "Stunning backline defense!", "Spectacular shot attempt!", "90th minute penalty box pressure..."] },
+            f1: { headline: "Monaco Grand Prix Setup:", runners: [{id:1, name:"Scuderia Vanilla", odds:1.8}, {id:2, name:"Cyber Blue Racing", odds:2.8}, {id:3, name:"Apex Kinetic", odds:6.5}], stages: ["Lights out!", "Navigating hairpin turns!", "Flawless pit stops executing!", "Final corner dash..."] }
+        };
+
+        let playerHand = [], dealerHand = [];
+        const suits = ['♠', '♥', '♦', '♣'], slotFruits = ['🍇', '🍉', '🍋', '🍓', '🍒'];
+        const cardValues = [{n:'2', v:2}, {n:'3', v:3}, {n:'4', v:4}, {n:'5', v:5}, {n:'6', v:6}, {n:'7', v:7}, {n:'8', v:8}, {n:'9', v:9}, {n:'10', v:10}, {n:'J', v:10}, {n:'Q', v:10}, {n:'K', v:10}, {n:'A', v:11}];
+
+        // Dynamic High-Priority Event Binder for Mobile Screens
+        function bindTouch(elementId, callback) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const handler = (e) => {
+                e.preventDefault();
+                if (!operationInFlight || elementId === 'hit-btn' || elementId === 'stand-btn') callback();
+            };
+            el.addEventListener('touchend', handler, { passive: false });
+            el.addEventListener('click', handler);
+        }
+
+        function routeTo(target) {
+            if (operationInFlight) return;
+            activeModule = target;
+            document.querySelectorAll('.master-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.game-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`nav-${target}`).classList.add('active');
+            document.getElementById(`card-${target}`).classList.add('active');
+            refreshGlobalUI();
+        }
+
+        function syncWagers(value) {
+            universalWager = parseInt(value);
+            ['sports-txt', 'bj-txt', 'slots-txt'].forEach(id => document.getElementById(`wager-${id}`).innerText = universalWager);
+            ['slider-sports', 'slider-bj', 'slider-slots'].forEach(id => document.getElementById(id).value = universalWager);
+            refreshGlobalUI();
+        }
+
+        function refreshGlobalUI() {
+            document.getElementById('global-balance').innerText = balance;
+            document.getElementById('win-count').innerText = totalWins;
+            document.getElementById('loss-count').innerText = totalLosses;
+
+            ['slider-sports', 'slider-bj', 'slider-slots'].forEach(id => {
+                const slider = document.getElementById(id);
+                slider.max = Math.max(10, balance);
+                slider.disabled = operationInFlight;
+            });
+
+            document.getElementById('book-btn').disabled = (selectedRunnerId === null || balance < universalWager || operationInFlight);
+            
+            if (!operationInFlight) {
+                document.getElementById('bj-slider-wrapper').style.opacity = '1';
+                document.getElementById('deal-btn').style.display = 'block';
+                document.getElementById('hit-btn').style.display = 'none';
+                document.getElementById('stand-btn').style.display = 'none';
+                document.getElementById('deal-btn').disabled = (balance < universalWager);
+            }
+            document.getElementById('slots-btn').disabled = (balance < universalWager || operationInFlight);
+        }
+
+        function switchSport(sportKey) {
+            if (operationInFlight) return;
+            currentSport = sportKey; selectedRunnerId = null;
+            document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`sub-${sportKey}`).classList.add('active');
+            renderSportsMarkets();
+            refreshGlobalUI();
+        }
+
+        function renderSportsMarkets() {
+            const data = sportsDatabase[currentSport];
+            document.getElementById('market-headline').innerText = data.headline;
+            const container = document.getElementById('odds-container');
+            container.innerHTML = '';
+            
+            data.runners.forEach(runner => {
+                const div = document.createElement('div');
+                div.className = `odds-row ${selectedRunnerId === runner.id ? 'selected' : ''}`;
+                div.innerHTML = `<span>${runner.name}</span><span class="odds-value">${runner.odds.toFixed(1)}x</span>`;
+                
+                const selectRow = (e) => {
+                    e.preventDefault();
+                    if (!operationInFlight) { selectedRunnerId = runner.id; renderSportsMarkets(); refreshGlobalUI(); }
+                };
+                div.addEventListener('touchend', selectRow, { passive: false });
+                div.addEventListener('click', selectRow);
+                container.appendChild(div);
+            });
+        }
+
+        function startSportsSim() {
+            if (selectedRunnerId === null || balance < universalWager || operationInFlight) return;
+            operationInFlight = true; balance -= universalWager; refreshGlobalUI();
+            const badge = document.getElementById('live-badge'), txt = document.getElementById('screen-text');
+            badge.style.display = 'inline-block';
+            
+            let idx = 0; const stages = sportsDatabase[currentSport].stages;
+            const step = setInterval(() => {
+                if (idx < stages.length) { txt.innerText = stages[idx++]; } 
+                else {
+                    clearInterval(step); badge.style.display = 'none'; operationInFlight = false;
+                    const run = sportsDatabase[currentSport].runners, winIdx = Math.floor(Math.random() * run.length);
+                    if (selectedRunnerId === run[winIdx].id) {
+                        const pay = Math.floor(universalWager * run[winIdx].odds); balance += pay; totalWins++;
+                        txt.innerHTML = `🏁 FINISH 🏁<br><span style="color:var(--win-green)">Won +${pay} VC!</span>`;
+                    } else {
+                        totalLosses++; txt.innerHTML = `🏁 FINISH 🏁<br><span style="color:var(--loss-red)">Lost stake. Winner: ${run[winIdx].name}</span>`;
+                    }
+              
